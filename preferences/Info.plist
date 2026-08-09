@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>zh_CN</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>musicfg</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.liuf.musicfg</string>
+	<string>musicfg</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
@@ -19,6 +19,6 @@
 	<key>CFBundleVersion</key>
 	<string>1.0.0</string>
 	<key>NSPrincipalClass</key>
-	<string>MFGRootListController</string>
+	<string>musicfgRootListController</string>
 </dict>
 </plist>
