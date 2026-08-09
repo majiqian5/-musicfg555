@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
+#import <MediaPlayer/MediaPlayer.h>
 
 @interface MFGEffectManager : NSObject
 @property (nonatomic, strong) CADisplayLink *displayLink;
@@ -50,7 +51,16 @@
 
 #pragma mark - 辅助函数
 
-static BOOL isMusicPlayer(UIView *view) {
+// 严格判断：只有明确的音乐播放器视图才算（排除通知）
+static BOOL isMusicPlayerStrict(UIView *view) {
+    NSString *className = NSStringFromClass([view class]);
+    return [className containsString:@"CCUIMedia"] ||
+           [className containsString:@"NowPlaying"] ||
+           [className containsString:@"MediaControl"];
+}
+
+// 宽松判断：用于边框阴影等（通知也有效果）
+static BOOL isMusicPlayerLoose(UIView *view) {
     NSString *className = NSStringFromClass([view class]);
     return [className containsString:@"NowPlaying"] ||
            [className containsString:@"Platter"] ||
@@ -58,90 +68,79 @@ static BOOL isMusicPlayer(UIView *view) {
            [className containsString:@"CCUIMedia"];
 }
 
-static BOOL isInMusicPlayer(UIView *view) {
+static BOOL isInMusicPlayerStrict(UIView *view) {
     UIView *superview = view;
     while (superview) {
-        if (isMusicPlayer(superview)) return YES;
+        if (isMusicPlayerStrict(superview)) return YES;
         superview = superview.superview;
     }
     return NO;
 }
 
-#pragma mark - 七色舞台灯
-
-static void addStageLights(UIView *view) {
-    if ([view viewWithTag:88888]) return; // 已经加过了
-    
-    CGFloat lightSize = 6.0;
-    NSInteger count = 7;
-    
-    for (NSInteger i = 0; i < count; i++) {
-        UIView *light = [[UIView alloc] initWithFrame:CGRectMake(0, 0, lightSize, lightSize)];
-        light.tag = 88888 + i;
-        light.layer.cornerRadius = lightSize / 2;
-        light.backgroundColor = [UIColor colorWithHue:(i * 1.0 / count) saturation:1.0 brightness:1.0 alpha:1.0];
-        light.layer.shadowColor = light.backgroundColor.CGColor;
-        light.layer.shadowOffset = CGSizeZero;
-        light.layer.shadowRadius = 6.0;
-        light.layer.shadowOpacity = 1.0;
-        [view addSubview:light];
-    }
+// 获取当前播放时间（用于频谱同步）
+static NSTimeInterval getCurrentPlaybackTime() {
+    NSDictionary *info = [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo;
+    if (!info) return 0;
+    NSNumber *time = info[MPNowPlayingInfoPropertyElapsedPlaybackTime];
+    return time ? [time doubleValue] : 0;
 }
 
-static void updateStageLights(UIView *view) {
-    CGFloat phase = [[MFGEffectManager sharedInstance] currentPhase];
-    CGFloat radius = view.bounds.size.width / 2 + 8;
-    CGPoint center = CGPointMake(view.bounds.size.width / 2, view.bounds.size.height / 2);
-    
-    for (NSInteger i = 0; i < 7; i++) {
-        UIView *light = [view viewWithTag:88888 + i];
-        if (!light) continue;
-        
-        CGFloat angle = phase * M_PI * 2 + (i * M_PI * 2 / 7);
-        CGFloat x = center.x + cos(angle) * radius - light.bounds.size.width / 2;
-        CGFloat y = center.y + sin(angle) * radius - light.bounds.size.height / 2;
-        light.frame = CGRectMake(x, y, light.bounds.size.width, light.bounds.size.height);
-    }
+// 伪随机数生成（用播放时间做种子，确保同一段音乐频谱一样）
+static float pseudoRandom(int seed, int index) {
+    int n = seed * 1103515245 + index * 12345;
+    n = (n >> 16) & 0x7fff;
+    return (float)n / 32767.0f;
 }
 
-#pragma mark - 频谱可视化（简化版）
+#pragma mark - 频谱视图（放在中间）
 
-static void addSpectrumView(UIView *view) {
+static void addSpectrumToView(UIView *view) {
     if ([view viewWithTag:77777]) return;
     
-    CGFloat barCount = 12;
-    CGFloat barWidth = 4.0;
+    NSInteger barCount = 16;
+    CGFloat barWidth = 5.0;
     CGFloat spacing = 3.0;
     CGFloat totalWidth = barCount * barWidth + (barCount - 1) * spacing;
     CGFloat startX = (view.bounds.size.width - totalWidth) / 2;
-    CGFloat maxHeight = 30.0;
-    CGFloat y = view.bounds.size.height - maxHeight - 10;
+    CGFloat maxHeight = 40.0;
+    // 放在垂直中间位置
+    CGFloat centerY = view.bounds.size.height / 2;
     
     for (NSInteger i = 0; i < barCount; i++) {
-        UIView *bar = [[UIView alloc] initWithFrame:CGRectMake(startX + i * (barWidth + spacing), y, barWidth, maxHeight)];
+        UIView *bar = [[UIView alloc] initWithFrame:CGRectMake(startX + i * (barWidth + spacing), 
+                                                               centerY - maxHeight / 2, 
+                                                               barWidth, maxHeight)];
         bar.tag = 77777 + i;
         bar.layer.cornerRadius = barWidth / 2;
-        bar.backgroundColor = [UIColor colorWithHue:(i * 1.0 / barCount) saturation:1.0 brightness:1.0 alpha:0.8];
+        // 彩虹色
+        CGFloat hue = (CGFloat)i / barCount;
+        bar.backgroundColor = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:0.9];
         bar.layer.shadowColor = bar.backgroundColor.CGColor;
         bar.layer.shadowOffset = CGSizeZero;
-        bar.layer.shadowRadius = 4.0;
+        bar.layer.shadowRadius = 5.0;
         bar.layer.shadowOpacity = 1.0;
         [view addSubview:bar];
     }
 }
 
-static void updateSpectrumView(UIView *view) {
-    CGFloat phase = [[MFGEffectManager sharedInstance] currentPhase];
+static void updateSpectrum(UIView *view) {
+    NSTimeInterval currentTime = getCurrentPlaybackTime();
+    int seed = (int)(currentTime * 10); // 每0.1秒变一次
+    CGFloat centerY = view.bounds.size.height / 2;
+    CGFloat maxHeight = 40.0;
     
-    for (NSInteger i = 0; i < 12; i++) {
+    for (NSInteger i = 0; i < 16; i++) {
         UIView *bar = [view viewWithTag:77777 + i];
         if (!bar) continue;
         
-        // 用正弦函数模拟频谱跳动
-        CGFloat randomHeight = 10 + 20 * fabs(sin(phase * 10 + i * 0.8));
+        // 用播放时间生成伪随机高度，模拟频谱
+        float rand1 = pseudoRandom(seed, i);
+        float rand2 = pseudoRandom(seed + 1, i + 100);
+        float height = maxHeight * (0.3 + 0.7 * (rand1 * 0.6 + rand2 * 0.4));
+        
         CGRect frame = bar.frame;
-        frame.size.height = randomHeight;
-        frame.origin.y = view.bounds.size.height - randomHeight - 10;
+        frame.size.height = height;
+        frame.origin.y = centerY - height / 2;
         bar.frame = frame;
     }
 }
@@ -153,7 +152,8 @@ static void updateSpectrumView(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isMusicPlayer(self)) {
+    // 宽松判断：边框阴影效果（通知也有）
+    if (isMusicPlayerLoose(self)) {
         // 圆角
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
@@ -167,14 +167,12 @@ static void updateSpectrumView(UIView *view) {
         self.layer.shadowOffset = CGSizeZero;
         self.layer.shadowRadius = 15.0;
         self.layer.shadowOpacity = 0.8;
-        
-        // 七色舞台灯
-        addStageLights(self);
-        updateStageLights(self);
-        
-        // 频谱可视化
-        addSpectrumView(self);
-        updateSpectrumView(self);
+    }
+    
+    // 严格判断：只在音乐播放器上加频谱（通知不加）
+    if (isMusicPlayerStrict(self)) {
+        addSpectrumToView(self);
+        updateSpectrum(self);
     }
 }
 
@@ -185,17 +183,12 @@ static void updateSpectrumView(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayer(self)) {
-        // 用 tag 防止重复修改导致递归
+    if (isInMusicPlayerStrict(self)) {
         if (self.tag != 66666) {
             self.tag = 66666;
-            
-            // 字体放大 1.2 倍，加粗
             CGFloat newSize = self.font.pointSize * 1.2;
             self.font = [UIFont boldSystemFontOfSize:newSize];
         }
-        
-        // 彩虹颜色（每帧更新，不触发递归）
         self.textColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.3];
     }
 }
@@ -207,12 +200,10 @@ static void updateSpectrumView(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayer(self)) {
-        // 彩虹进度条
+    if (isInMusicPlayerStrict(self)) {
         self.progressTintColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.6];
         self.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
         
-        // 进度条高度
         if (self.bounds.size.height != 4.0) {
             CGRect bounds = self.bounds;
             bounds.size.height = 4.0;
