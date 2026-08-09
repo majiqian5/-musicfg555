@@ -48,7 +48,8 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
 }
 
 - (void)tick:(CADisplayLink *)link {
-    CGFloat speed = [MFGPreferences sharedInstance].rainbowSpeed / 1000.0;
+    MFGPreferences *prefs = [MFGPreferences sharedInstance];
+    CGFloat speed = prefs.rainbowSpeed / 1000.0;
     self.phase += speed;
     if (self.phase > 1.0) self.phase -= 1.0;
     [self updateAllEffects];
@@ -74,6 +75,9 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
     UIColor *textColor = [self rainbowColorWithOffset:0.3];
     UIColor *progressColor = [self rainbowColorWithOffset:0.6];
     
+    UIColor *borderColor = prefs.rainbowBorder ? rainbowColor : [UIColor whiteColor];
+    UIColor *shadowColor = prefs.rainbowShadow ? rainbowColor : [UIColor whiteColor];
+    
     Class UILabelClass = NSClassFromString(@"UILabel");
     
     for (UIView *view in self.playerViews) {
@@ -86,20 +90,21 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
         if (isNotification && !prefs.notificationEnabled) continue;
         
         CGFloat radius = isNotification ? prefs.notificationCornerRadius : prefs.cornerRadius;
+        CGFloat borderW = isNotification ? prefs.notificationBorderWidth : prefs.borderWidth;
         
         // 圆角
         view.layer.cornerRadius = radius;
         view.layer.masksToBounds = NO;
         
         // 边框
-        view.layer.borderWidth = prefs.borderWidth;
-        view.layer.borderColor = rainbowColor.CGColor;
+        view.layer.borderWidth = borderW;
+        view.layer.borderColor = borderColor.CGColor;
         
         // 阴影
-        view.layer.shadowColor = rainbowColor.CGColor;
+        view.layer.shadowColor = shadowColor.CGColor;
         view.layer.shadowOffset = CGSizeZero;
         view.layer.shadowRadius = prefs.shadowRadius;
-        view.layer.shadowOpacity = 0.8;
+        view.layer.shadowOpacity = prefs.shadowOpacity;
         
         // tintColor
         view.tintColor = progressColor;
@@ -109,6 +114,7 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
                    textColor:prefs.rainbowText ? textColor : nil
                  tintColor:progressColor
                  fontScale:prefs.fontScale
+                  boldText:prefs.boldText
                  labelClass:UILabelClass];
     }
 }
@@ -117,6 +123,7 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
            textColor:(UIColor *)textColor 
          tintColor:(UIColor *)tintColor
          fontScale:(CGFloat)fontScale
+          boldText:(BOOL)boldText
          labelClass:(Class)labelClass {
     
     for (UIView *subview in view.subviews) {
@@ -130,7 +137,7 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
                 UIFont *oldFont = [subview valueForKey:@"font"];
                 if (oldFont && oldFont.pointSize > 0) {
                     CGFloat newSize = oldFont.pointSize * fontScale;
-                    UIFont *newFont = [UIFont boldSystemFontOfSize:newSize];
+                    UIFont *newFont = boldText ? [UIFont boldSystemFontOfSize:newSize] : [UIFont systemFontOfSize:newSize];
                     [subview setValue:newFont forKey:@"font"];
                 }
             }
@@ -144,6 +151,7 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
                    textColor:textColor 
                  tintColor:tintColor
                  fontScale:fontScale
+                  boldText:boldText
                  labelClass:labelClass];
     }
 }
