@@ -23,11 +23,13 @@
 			<string>musicfg</string>
 			<key>key</key>
 			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		
 		<dict>
 			<key>label</key>
-			<string>播放器效果</string>
+			<string>播放器外观</string>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 		</dict>
@@ -48,6 +50,8 @@
 			<integer>50</integer>
 			<key>default</key>
 			<integer>20</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		<dict>
 			<key>showValue</key>
@@ -66,6 +70,8 @@
 			<integer>10</integer>
 			<key>default</key>
 			<integer>2</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		<dict>
 			<key>showValue</key>
@@ -84,6 +90,8 @@
 			<integer>40</integer>
 			<key>default</key>
 			<integer>15</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		
 		<dict>
@@ -109,18 +117,22 @@
 			<real>2.0</real>
 			<key>default</key>
 			<real>1.15</real>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>label</key>
-			<string>彩虹文字</string>
+			<string>彩虹文字颜色</string>
 			<key>default</key>
 			<true/>
 			<key>defaults</key>
 			<string>musicfg</string>
 			<key>key</key>
 			<string>RainbowText</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		
 		<dict>
@@ -146,6 +158,8 @@
 			<integer>10</integer>
 			<key>default</key>
 			<integer>3</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		
 		<dict>
@@ -165,6 +179,8 @@
 			<string>musicfg</string>
 			<key>key</key>
 			<string>NotificationEnabled</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 		<dict>
 			<key>showValue</key>
@@ -183,6 +199,8 @@
 			<integer>50</integer>
 			<key>default</key>
 			<integer>20</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
 		</dict>
 	</array>
 </dict>
