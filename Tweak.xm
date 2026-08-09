@@ -50,7 +50,24 @@
 
 #pragma mark - 辅助函数
 
-// 用 runtime 获取当前播放时间（不需要 import 头文件）
+static BOOL isPlayerView(UIView *view) {
+    NSString *className = NSStringFromClass([view class]);
+    return [className containsString:@"Platter"] ||
+           [className containsString:@"NowPlaying"] ||
+           [className containsString:@"MediaControl"] ||
+           [className containsString:@"CCUIMedia"];
+}
+
+static BOOL isInPlayerView(UIView *view) {
+    UIView *superview = view;
+    while (superview) {
+        if (isPlayerView(superview)) return YES;
+        superview = superview.superview;
+    }
+    return NO;
+}
+
+// 用 runtime 获取播放时间
 static NSTimeInterval getPlaybackTime() {
     Class infoCenterClass = NSClassFromString(@"MPNowPlayingInfoCenter");
     if (!infoCenterClass) return 0;
@@ -65,42 +82,15 @@ static NSTimeInterval getPlaybackTime() {
     return time ? [time doubleValue] : 0;
 }
 
-// 严格判断：只有明确的音乐播放器视图才算（排除通知）
-static BOOL isMusicPlayerStrict(UIView *view) {
-    NSString *className = NSStringFromClass([view class]);
-    return [className containsString:@"CCUIMedia"] ||
-           [className containsString:@"NowPlaying"] ||
-           [className containsString:@"MediaControl"];
-}
-
-// 宽松判断：用于边框阴影等（通知也有效果）
-static BOOL isMusicPlayerLoose(UIView *view) {
-    NSString *className = NSStringFromClass([view class]);
-    return [className containsString:@"NowPlaying"] ||
-           [className containsString:@"Platter"] ||
-           [className containsString:@"MediaControl"] ||
-           [className containsString:@"CCUIMedia"];
-}
-
-static BOOL isInMusicPlayerStrict(UIView *view) {
-    UIView *superview = view;
-    while (superview) {
-        if (isMusicPlayerStrict(superview)) return YES;
-        superview = superview.superview;
-    }
-    return NO;
-}
-
-// 伪随机数生成（用播放时间做种子）
 static float pseudoRandom(int seed, int index) {
     int n = seed * 1103515245 + index * 12345;
     n = (n >> 16) & 0x7fff;
     return (float)n / 32767.0f;
 }
 
-#pragma mark - 频谱视图（放在中间）
+#pragma mark - 频谱（放在中间）
 
-static void addSpectrumToView(UIView *view) {
+static void addSpectrum(UIView *view) {
     if ([view viewWithTag:77777]) return;
     
     NSInteger barCount = 16;
@@ -155,23 +145,23 @@ static void updateSpectrum(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    // 宽松判断：边框阴影效果（通知也有）
-    if (isMusicPlayerLoose(self)) {
+    if (isPlayerView(self)) {
+        // 圆角
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
         
+        // 彩虹边框
         self.layer.borderWidth = 2.0;
         self.layer.borderColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
         
+        // 发光阴影
         self.layer.shadowColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
         self.layer.shadowOffset = CGSizeZero;
         self.layer.shadowRadius = 15.0;
         self.layer.shadowOpacity = 0.8;
-    }
-    
-    // 严格判断：只在音乐播放器上加频谱（通知不加）
-    if (isMusicPlayerStrict(self)) {
-        addSpectrumToView(self);
+        
+        // 频谱
+        addSpectrum(self);
         updateSpectrum(self);
     }
 }
@@ -183,7 +173,7 @@ static void updateSpectrum(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayerStrict(self)) {
+    if (isInPlayerView(self)) {
         if (self.tag != 66666) {
             self.tag = 66666;
             CGFloat newSize = self.font.pointSize * 1.2;
@@ -200,7 +190,7 @@ static void updateSpectrum(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayerStrict(self)) {
+    if (isInPlayerView(self)) {
         self.progressTintColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.6];
         self.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
         
@@ -209,6 +199,20 @@ static void updateSpectrum(UIView *view) {
             bounds.size.height = 4.0;
             self.bounds = bounds;
         }
+    }
+}
+
+%end
+
+%hook UISlider
+
+- (void)layoutSubviews {
+    %orig;
+    
+    if (isInPlayerView(self)) {
+        self.minimumTrackTintColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.8];
+        self.maximumTrackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
+        self.thumbTintColor = [UIColor whiteColor];
     }
 }
 
