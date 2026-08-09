@@ -9,13 +9,10 @@
 @interface MFGManager : NSObject
 @property (nonatomic, strong) MFGGlowView *glowView;
 @property (nonatomic, strong) MFGSpectrumView *spectrumView;
-@property (nonatomic, strong) CALayer *rainbowBorderLayer;
-@property (nonatomic, strong) CAGradientLayer *rainbowTextGradient;
 @property (nonatomic, strong) CADisplayLink *displayLink;
 @property (nonatomic, assign) CGFloat animationPhase;
 + (instancetype)sharedInstance;
 - (void)applyEffectsToView:(UIView *)view;
-- (void)removeEffectsFromView:(UIView *)view;
 - (void)updateEffects;
 @end
 
@@ -51,17 +48,12 @@ static MFGManager *manager = nil;
     MFGPreferences *prefs = [MFGPreferences sharedInstance];
     if (!prefs.enabled) return;
     
-    // 圆角
     view.layer.cornerRadius = prefs.cornerRadius;
     view.layer.masksToBounds = YES;
-    
-    // 边框
     view.layer.borderWidth = prefs.borderWidth;
     if (prefs.borderColor && !prefs.borderColorAnimation) {
         view.layer.borderColor = prefs.borderColor.CGColor;
     }
-    
-    // 阴影
     view.layer.shadowOffset = CGSizeMake(0, prefs.shadowOffsetY);
     view.layer.shadowRadius = prefs.shadowRadius;
     view.layer.shadowOpacity = 0.5;
@@ -69,10 +61,9 @@ static MFGManager *manager = nil;
         view.layer.shadowColor = prefs.shadowColor.CGColor;
     }
     
-    // 灵动光圈
     if (prefs.glowEnabled && !self.glowView) {
         self.glowView = [[MFGGlowView alloc] initWithFrame:view.bounds];
-        self.glowView.style = prefs.glowStyle;
+        self.glowView.style = (MFGGlowStyle)prefs.glowStyle;
         self.glowView.glowWidth = prefs.glowWidth;
         self.glowView.glowColor = prefs.glowColor;
         self.glowView.animationSpeed = prefs.glowSpeed;
@@ -81,7 +72,6 @@ static MFGManager *manager = nil;
         [self.glowView startAnimation];
     }
     
-    // 频谱
     if (prefs.spectrumEnabled && !self.spectrumView) {
         CGFloat specY = view.bounds.size.height - prefs.spectrumHeight - 10;
         self.spectrumView = [[MFGSpectrumView alloc] initWithFrame:
@@ -96,20 +86,15 @@ static MFGManager *manager = nil;
         [self.spectrumView startAnimation];
     }
     
-    // 启动彩虹动画
     if (prefs.borderColorAnimation || prefs.shadowColorAnimation) {
-        [self startRainbowAnimationForView:view];
+        if (!self.displayLink) {
+            self.animationPhase = 0;
+            self.displayLink = [CADisplayLink displayLinkWithTarget:self
+                                                           selector:@selector(rainbowTick:)];
+            [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop]
+                                   forMode:NSRunLoopCommonModes];
+        }
     }
-}
-
-- (void)startRainbowAnimationForView:(UIView *)view {
-    if (self.displayLink) return;
-    
-    self.animationPhase = 0;
-    self.displayLink = [CADisplayLink displayLinkWithTarget:self
-                                                   selector:@selector(rainbowTick:)];
-    [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop]
-                           forMode:NSRunLoopCommonModes];
 }
 
 - (void)rainbowTick:(CADisplayLink *)link {
@@ -119,43 +104,24 @@ static MFGManager *manager = nil;
     
     UIColor *rainbowColor = [MFGColorAnimation rainbowColorWithPhase:self.animationPhase];
     
-    // 边框彩虹
     if (prefs.borderColorAnimation) {
-        for (UIView *v in [self allPlayerViews]) {
-            v.layer.borderColor = rainbowColor.CGColor;
+        if (self.glowView.superview) {
+            self.glowView.superview.layer.borderColor = rainbowColor.CGColor;
         }
     }
     
-    // 阴影彩虹
     if (prefs.shadowColorAnimation) {
-        for (UIView *v in [self allPlayerViews]) {
-            v.layer.shadowColor = rainbowColor.CGColor;
+        if (self.glowView.superview) {
+            self.glowView.superview.layer.shadowColor = rainbowColor.CGColor;
         }
     }
-}
-
-- (NSArray *)allPlayerViews {
-    // 返回所有应用了效果的视图
-    NSMutableArray *views = [NSMutableArray array];
-    if (self.glowView.superview) [views addObject:self.glowView.superview];
-    return views;
-}
-
-- (void)removeEffectsFromView:(UIView *)view {
-    [self.glowView removeFromSuperview];
-    self.glowView = nil;
-    [self.spectrumView removeFromSuperview];
-    self.spectrumView = nil;
-    [self.displayLink invalidate];
-    self.displayLink = nil;
 }
 
 - (void)updateEffects {
-    // 更新所有效果
     MFGPreferences *prefs = [MFGPreferences sharedInstance];
     
     if (self.glowView) {
-        self.glowView.style = prefs.glowStyle;
+        self.glowView.style = (MFGGlowStyle)prefs.glowStyle;
         self.glowView.glowWidth = prefs.glowWidth;
         self.glowView.glowColor = prefs.glowColor;
         self.glowView.animationSpeed = prefs.glowSpeed;
@@ -171,57 +137,12 @@ static MFGManager *manager = nil;
 
 @end
 
-#pragma mark - Hook 音乐播放器视图
-
-// Hook SpringBoard 中的音乐播放器视图
-%hook SBApplication
-
-- (void)applicationDidFinishLaunching:(id)application {
-    %orig;
-    [[MFGPreferences sharedInstance] reloadPreferences];
-}
-
-%end
-
-// Hook 锁屏音乐播放器
-%hook SBLockScreenNowPlayingController
-
-- (void)viewDidLoad {
-    %orig;
-    UIView *view = self.view;
-    if (view) {
-        [[MFGManager sharedInstance] applyEffectsToView:view];
-    }
-}
-
-%end
-
-// Hook 控制中心音乐播放器
-%hook CCUIButtonModuleViewController
-
-- (void)viewDidLoad {
-    %orig;
-    // 尝试识别音乐模块
-    if ([NSStringFromClass([self class]) containsString:@"Media"] ||
-        [NSStringFromClass([self class]) containsString:@"NowPlaying"]) {
-        UIView *view = self.view;
-        if (view) {
-            [[MFGManager sharedInstance] applyEffectsToView:view];
-        }
-    }
-}
-
-%end
-
-// 通用：Hook UIView 布局，动态调整
 %hook UIView
 
 - (void)layoutSubviews {
     %orig;
     
     NSString *className = NSStringFromClass([self class]);
-    
-    // 识别音乐播放器相关视图
     BOOL isPlayerView = [className containsString:@"NowPlaying"] ||
                         [className containsString:@"MediaRemote"] ||
                         [className containsString:@"MediaControl"] ||
@@ -230,20 +151,17 @@ static MFGManager *manager = nil;
     if (isPlayerView && [[MFGPreferences sharedInstance] enabled]) {
         MFGPreferences *prefs = [MFGPreferences sharedInstance];
         
-        // 大小缩放
         if (prefs.playerSizeScale != 1.0) {
             CGAffineTransform transform = CGAffineTransformMakeScale(prefs.playerSizeScale, prefs.playerSizeScale);
             transform = CGAffineTransformTranslate(transform, 0, prefs.playerPositionY);
             self.transform = transform;
         }
         
-        // 圆角
         if (prefs.cornerRadius > 0) {
             self.layer.cornerRadius = prefs.cornerRadius;
             self.layer.masksToBounds = YES;
         }
         
-        // 边框
         if (prefs.borderWidth > 0) {
             self.layer.borderWidth = prefs.borderWidth;
             if (!prefs.borderColorAnimation && prefs.borderColor) {
@@ -251,7 +169,6 @@ static MFGManager *manager = nil;
             }
         }
         
-        // 阴影
         if (prefs.shadowRadius > 0) {
             self.layer.shadowOffset = CGSizeMake(0, prefs.shadowOffsetY);
             self.layer.shadowRadius = prefs.shadowRadius;
@@ -265,7 +182,6 @@ static MFGManager *manager = nil;
 
 %end
 
-// Hook UILabel 实现字体定制和彩虹文字
 %hook UILabel
 
 - (void)layoutSubviews {
@@ -274,7 +190,6 @@ static MFGManager *manager = nil;
     MFGPreferences *prefs = [MFGPreferences sharedInstance];
     if (!prefs.enabled) return;
     
-    // 检查是否在音乐播放器视图中
     UIView *superview = self.superview;
     BOOL inPlayer = NO;
     while (superview) {
@@ -288,20 +203,16 @@ static MFGManager *manager = nil;
     }
     
     if (inPlayer) {
-        // 字体大小缩放
         if (prefs.fontSizeScale != 1.0) {
             CGFloat newSize = self.font.pointSize * prefs.fontSizeScale;
             self.font = [UIFont fontWithName:self.font.fontName size:newSize];
         }
         
-        // 字体颜色
         if (prefs.fontColor) {
             self.textColor = prefs.fontColor;
         }
         
-        // 彩虹文字
         if (prefs.rainbowTextEnabled) {
-            // 用渐变 layer 实现彩虹文字
             CAGradientLayer *gradient = [CAGradientLayer layer];
             gradient.frame = self.bounds;
             gradient.colors = [MFGColorAnimation defaultRainbowCGColors];
@@ -320,7 +231,6 @@ static MFGManager *manager = nil;
 
 %end
 
-// Hook UIProgressView 实现进度条定制
 %hook UIProgressView
 
 - (void)layoutSubviews {
@@ -329,7 +239,6 @@ static MFGManager *manager = nil;
     MFGPreferences *prefs = [MFGPreferences sharedInstance];
     if (!prefs.enabled) return;
     
-    // 检查是否在音乐播放器中
     UIView *superview = self.superview;
     BOOL inPlayer = NO;
     while (superview) {
@@ -342,19 +251,16 @@ static MFGManager *manager = nil;
     }
     
     if (inPlayer) {
-        // 进度条高度
         if (prefs.progressHeight > 0) {
             CGRect frame = self.frame;
             frame.size.height = prefs.progressHeight;
             self.frame = frame;
         }
         
-        // 进度条颜色
         if (prefs.progressColor) {
             self.progressTintColor = prefs.progressColor;
         }
         
-        // 彩虹进度条
         if (prefs.rainbowProgressEnabled) {
             CAGradientLayer *gradient = [CAGradientLayer layer];
             gradient.frame = self.bounds;
