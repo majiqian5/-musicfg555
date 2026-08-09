@@ -2,34 +2,57 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
+// 判断是不是音乐播放器视图
+static BOOL isMusicPlayerView(UIView *view) {
+    NSString *className = NSStringFromClass([view class]);
+    
+    // 只匹配这些明确的音乐播放器类
+    NSArray *exactKeywords = @[
+        @"NowPlaying",
+        @"MediaControl",
+        @"CCUIMediaControls",
+        @"SBMedia"
+    ];
+    
+    for (NSString *keyword in exactKeywords) {
+        if ([className containsString:keyword]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+// 递归找父视图里有没有音乐播放器
+static BOOL isInMusicPlayer(UIView *view) {
+    UIView *superview = view;
+    while (superview) {
+        if (isMusicPlayerView(superview)) {
+            return YES;
+        }
+        superview = superview.superview;
+    }
+    return NO;
+}
+
 %hook UIView
 
 - (void)layoutSubviews {
     %orig;
     
-    NSString *className = NSStringFromClass([self class]);
-    
-    BOOL isPlayer = [className containsString:@"NowPlaying"] ||
-                    [className containsString:@"Platter"] ||
-                    [className containsString:@"MediaControl"] ||
-                    [className containsString:@"CCUIMedia"] ||
-                    [className containsString:@"SBMedia"];
-    
-    if (isPlayer) {
+    if (isMusicPlayerView(self)) {
         // 圆角
-        self.layer.cornerRadius = 25.0;
-        self.layer.masksToBounds = YES;
+        self.layer.cornerRadius = 20.0;
+        self.layer.masksToBounds = NO;
         
-        // 彩色边框
+        // 渐变发光边框效果
         self.layer.borderWidth = 2.0;
         self.layer.borderColor = [UIColor systemPinkColor].CGColor;
         
         // 发光阴影
         self.layer.shadowColor = [UIColor systemPinkColor].CGColor;
         self.layer.shadowOffset = CGSizeMake(0, 0);
-        self.layer.shadowRadius = 15.0;
-        self.layer.shadowOpacity = 0.8;
-        self.layer.masksToBounds = NO;
+        self.layer.shadowRadius = 20.0;
+        self.layer.shadowOpacity = 0.9;
     }
 }
 
@@ -40,27 +63,30 @@
 - (void)layoutSubviews {
     %orig;
     
-    UIView *superview = self.superview;
-    BOOL inPlayer = NO;
-    while (superview) {
-        NSString *cls = NSStringFromClass([superview class]);
-        if ([cls containsString:@"NowPlaying"] || 
-            [cls containsString:@"Platter"] ||
-            [cls containsString:@"Media"]) {
-            inPlayer = YES;
-            break;
-        }
-        superview = superview.superview;
+    if (isInMusicPlayer(self)) {
+        // 歌曲标题颜色
+        self.textColor = [UIColor whiteColor];
+        self.shadowColor = [UIColor systemPinkColor];
+        self.shadowOffset = CGSizeMake(0, 0);
     }
+}
+
+%end
+
+%hook UIProgressView
+
+- (void)layoutSubviews {
+    %orig;
     
-    if (inPlayer) {
-        // 歌曲名字改成粉色
-        self.textColor = [UIColor systemPinkColor];
+    if (isInMusicPlayer(self)) {
+        // 进度条颜色
+        self.progressTintColor = [UIColor systemPinkColor];
+        self.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
     }
 }
 
 %end
 
 %ctor {
-    // 空的，不初始化任何复杂东西
+    // 空的，安全第一
 }
