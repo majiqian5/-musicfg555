@@ -6,6 +6,7 @@
 @property (nonatomic, assign) CGFloat borderWidth;
 @property (nonatomic, assign) CGFloat shadowRadius;
 @property (nonatomic, assign) CGFloat shadowOpacity;
+@property (nonatomic, assign) CGFloat shadowOffsetY;
 @property (nonatomic, assign) CGFloat fontScale;
 @property (nonatomic, assign) BOOL rainbowText;
 @property (nonatomic, assign) BOOL boldText;
@@ -15,6 +16,7 @@
 @property (nonatomic, assign) BOOL notificationEnabled;
 @property (nonatomic, assign) CGFloat notificationCornerRadius;
 @property (nonatomic, assign) CGFloat notificationBorderWidth;
+@property (nonatomic, assign) CGFloat notificationShadowRadius;
 + (instancetype)sharedInstance;
 - (void)reloadPreferences;
 @end
