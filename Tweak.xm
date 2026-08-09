@@ -44,6 +44,28 @@ static MFGManager *manager = nil;
     [self updateEffects];
 }
 
+- (BOOL)isPlayerView:(UIView *)view {
+    NSString *className = NSStringFromClass([view class]);
+    NSArray *keywords = @[
+        @"NowPlaying",
+        @"MediaRemote",
+        @"MediaControl",
+        @"Platter",
+        @"CCUIMedia",
+        @"CCMedia",
+        @"SBMedia",
+        @"MPMedia",
+        @"AVPlayer",
+        @"PlayerView"
+    ];
+    for (NSString *keyword in keywords) {
+        if ([className containsString:keyword]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 - (void)applyEffectsToView:(UIView *)view {
     MFGPreferences *prefs = [MFGPreferences sharedInstance];
     if (!prefs.enabled) return;
@@ -142,15 +164,10 @@ static MFGManager *manager = nil;
 - (void)layoutSubviews {
     %orig;
     
-    NSString *className = NSStringFromClass([self class]);
-    BOOL isPlayerView = [className containsString:@"NowPlaying"] ||
-                        [className containsString:@"MediaRemote"] ||
-                        [className containsString:@"MediaControl"] ||
-                        [className containsString:@"Platter"];
+    MFGPreferences *prefs = [MFGPreferences sharedInstance];
+    if (!prefs.enabled) return;
     
-    if (isPlayerView && [[MFGPreferences sharedInstance] enabled]) {
-        MFGPreferences *prefs = [MFGPreferences sharedInstance];
-        
+    if ([[MFGManager sharedInstance] isPlayerView:self]) {
         if (prefs.playerSizeScale != 1.0) {
             CGAffineTransform transform = CGAffineTransformMakeScale(prefs.playerSizeScale, prefs.playerSizeScale);
             transform = CGAffineTransformTranslate(transform, 0, prefs.playerPositionY);
@@ -193,9 +210,7 @@ static MFGManager *manager = nil;
     UIView *superview = self.superview;
     BOOL inPlayer = NO;
     while (superview) {
-        NSString *cls = NSStringFromClass([superview class]);
-        if ([cls containsString:@"NowPlaying"] || [cls containsString:@"Platter"] ||
-            [cls containsString:@"Media"]) {
+        if ([[MFGManager sharedInstance] isPlayerView:superview]) {
             inPlayer = YES;
             break;
         }
@@ -242,8 +257,7 @@ static MFGManager *manager = nil;
     UIView *superview = self.superview;
     BOOL inPlayer = NO;
     while (superview) {
-        NSString *cls = NSStringFromClass([superview class]);
-        if ([cls containsString:@"NowPlaying"] || [cls containsString:@"Platter"]) {
+        if ([[MFGManager sharedInstance] isPlayerView:superview]) {
             inPlayer = YES;
             break;
         }
