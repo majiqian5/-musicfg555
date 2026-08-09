@@ -5,7 +5,7 @@
 
 @implementation MFGRootListController
 
-- (NSArray *)specifiers {
+- (id)specifiers {
 	if (!_specifiers) {
 		_specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
 	}
