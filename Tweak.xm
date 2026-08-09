@@ -5,9 +5,11 @@
 @interface MFGEffectManager : NSObject
 @property (nonatomic, strong) CADisplayLink *displayLink;
 @property (nonatomic, assign) CGFloat phase;
+@property (nonatomic, strong) NSMutableArray *playerViews;
 + (instancetype)sharedInstance;
 - (UIColor *)rainbowColorWithOffset:(CGFloat)offset;
-- (CGFloat)currentPhase;
+- (void)registerPlayerView:(UIView *)view;
+- (void)updateAllEffects;
 @end
 
 @implementation MFGEffectManager
@@ -25,6 +27,7 @@
     self = [super init];
     if (self) {
         self.phase = 0;
+        self.playerViews = [NSMutableArray array];
         self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
         [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
     }
@@ -34,6 +37,7 @@
 - (void)tick:(CADisplayLink *)link {
     self.phase += 0.003;
     if (self.phase > 1.0) self.phase -= 1.0;
+    [self updateAllEffects];
 }
 
 - (UIColor *)rainbowColorWithOffset:(CGFloat)offset {
@@ -42,85 +46,82 @@
     return [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:1.0];
 }
 
-- (CGFloat)currentPhase {
-    return self.phase;
+- (void)registerPlayerView:(UIView *)view {
+    if (![self.playerViews containsObject:view]) {
+        [self.playerViews addObject:view];
+    }
 }
 
-@end
-
-#pragma mark - 辅助函数
-
-static BOOL isPlayerView(UIView *view) {
-    NSString *className = NSStringFromClass([view class]);
-    return [className containsString:@"Platter"] ||
-           [className containsString:@"NowPlaying"] ||
-           [className containsString:@"MediaControl"] ||
-           [className containsString:@"CCUIMedia"];
-}
-
-// 递归修改子视图中的进度条和滑块
-static void updateSubviewsInPlayer(UIView *view) {
-    UIColor *rainbowColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.5];
+- (void)updateAllEffects {
+    UIColor *borderColor = [self rainbowColorWithOffset:0];
+    UIColor *textColor = [self rainbowColorWithOffset:0.3];
+    UIColor *progressColor = [self rainbowColorWithOffset:0.6];
+    UIColor *sliderColor = [self rainbowColorWithOffset:0.8];
     
+    for (UIView *view in self.playerViews) {
+        if (!view.superview) continue;
+        
+        view.layer.borderColor = borderColor.CGColor;
+        view.layer.shadowColor = borderColor.CGColor;
+        
+        [self updateSubview:view textColor:textColor progressColor:progressColor sliderColor:sliderColor];
+    }
+}
+
+- (void)updateSubview:(UIView *)view textColor:(UIColor *)textColor progressColor:(UIColor *)progressColor sliderColor:(UIColor *)sliderColor {
     for (UIView *subview in view.subviews) {
-        // 进度条
-        if ([subview isKindOfClass:NSClassFromString(@"UIProgressView")]) {
-            UISlider *progress = (UISlider *)subview;
-            [progress setValue:0.5 animated:NO]; // 随便调用一下，确保类型正确
-            // 用 KVC 设置颜色
-            [subview setValue:rainbowColor forKey:@"progressTintColor"];
+        NSString *className = NSStringFromClass([subview class]);
+        
+        if ([className containsString:@"Label"]) {
+            if (subview.tag != 66666) {
+                subview.tag = 66666;
+                UIFont *oldFont = [subview valueForKey:@"font"];
+                if (oldFont && oldFont.pointSize > 0) {
+                    CGFloat newSize = oldFont.pointSize * 1.15;
+                    UIFont *newFont = [UIFont boldSystemFontOfSize:newSize];
+                    [subview setValue:newFont forKey:@"font"];
+                }
+            }
+            [subview setValue:textColor forKey:@"textColor"];
+        }
+        
+        if ([className containsString:@"ProgressView"]) {
+            [subview setValue:progressColor forKey:@"progressTintColor"];
             [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"trackTintColor"];
         }
         
-        // 滑块/音量条
-        if ([subview isKindOfClass:NSClassFromString(@"UISlider")]) {
-            [subview setValue:rainbowColor forKey:@"minimumTrackTintColor"];
+        if ([className containsString:@"Slider"]) {
+            [subview setValue:sliderColor forKey:@"minimumTrackTintColor"];
             [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"maximumTrackTintColor"];
             [subview setValue:[UIColor whiteColor] forKey:@"thumbTintColor"];
         }
         
-        // 标签
-        if ([subview isKindOfClass:NSClassFromString(@"UILabel")]) {
-            if (subview.tag != 66666) {
-                subview.tag = 66666;
-                UIFont *oldFont = [subview valueForKey:@"font"];
-                CGFloat newSize = oldFont.pointSize * 1.2;
-                UIFont *newFont = [UIFont boldSystemFontOfSize:newSize];
-                [subview setValue:newFont forKey:@"font"];
-            }
-            UIColor *textColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.3];
-            [subview setValue:textColor forKey:@"textColor"];
-        }
-        
-        // 递归处理子视图
-        updateSubviewsInPlayer(subview);
+        [self updateSubview:subview textColor:textColor progressColor:progressColor sliderColor:sliderColor];
     }
 }
 
-#pragma mark - Hooks
+@end
 
 %hook UIView
 
 - (void)layoutSubviews {
     %orig;
     
-    if (isPlayerView(self)) {
-        // 圆角
+    NSString *className = NSStringFromClass([self class]);
+    BOOL isPlayer = [className containsString:@"Platter"] ||
+                    [className containsString:@"NowPlaying"] ||
+                    [className containsString:@"MediaControl"] ||
+                    [className containsString:@"CCUIMedia"];
+    
+    if (isPlayer) {
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
-        
-        // 彩虹边框
         self.layer.borderWidth = 2.0;
-        self.layer.borderColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
-        
-        // 发光阴影
-        self.layer.shadowColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
         self.layer.shadowOffset = CGSizeZero;
         self.layer.shadowRadius = 15.0;
         self.layer.shadowOpacity = 0.8;
         
-        // 递归修改所有子视图（进度条、音量条、文字）
-        updateSubviewsInPlayer(self);
+        [[MFGEffectManager sharedInstance] registerPlayerView:self];
     }
 }
 
