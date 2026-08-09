@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: macos-latest
     
     steps:
       - name: Checkout
@@ -15,24 +15,24 @@ jobs:
       
       - name: Install Theos
         run: |
-          brew install ldid xz make
+          brew install ldid xz
           git clone --recursive --depth 1 https://github.com/theos/theos.git $THEOS
         env:
           THEOS: ${{ github.workspace }}/theos
       
       - name: Download iOS SDK
         run: |
-          curl -fL -o sdk.tar.xz "https://github.com/xybp888/iOS-SDKs/releases/download/iOS15.0/iPhoneOS15.0.sdk.tar.xz" || \
           curl -fL -o sdk.tar.xz "https://github.com/xybp888/iOS-SDKs/releases/download/iOS14.5/iPhoneOS14.5.sdk.tar.xz"
           tar -xf sdk.tar.xz
           mkdir -p $THEOS/sdks
-          mv iPhoneOS*.sdk $THEOS/sdks/
+          mv iPhoneOS14.5.sdk $THEOS/sdks/
         env:
           THEOS: ${{ github.workspace }}/theos
       
       - name: Build Package
         run: |
           export THEOS=${{ github.workspace }}/theos
+          export SDKVERSION=14.5
           make package FINALPACKAGE=1
       
       - name: Upload deb
