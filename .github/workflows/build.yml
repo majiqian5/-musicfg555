@@ -28,14 +28,20 @@ jobs:
           git config core.sparseCheckout true
           echo "iPhoneOS14.5.sdk" >> .git/info/sparse-checkout
           git pull --depth 1 origin master
+          mkdir -p $THEOS/sdks
           cp -r iPhoneOS14.5.sdk $THEOS/sdks/
+          # 给 SDK 起个别名，让 Theos 能找到
+          cd $THEOS/sdks
+          ln -s iPhoneOS14.5.sdk iPhoneOS15.0.sdk 2>/dev/null || true
+          ln -s iPhoneOS14.5.sdk iPhoneOS15.5.sdk 2>/dev/null || true
+          ln -s iPhoneOS14.5.sdk iPhoneOS16.0.sdk 2>/dev/null || true
+          ln -s iPhoneOS14.5.sdk iPhoneOS16.5.sdk 2>/dev/null || true
         env:
           THEOS: ${{ github.workspace }}/theos
       
       - name: Build Package
         run: |
           export THEOS=${{ github.workspace }}/theos
-          export SDKVERSION=14.5
           make package FINALPACKAGE=1
       
       - name: Upload deb
