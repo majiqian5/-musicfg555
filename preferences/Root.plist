@@ -8,7 +8,7 @@
 	<array>
 		<dict>
 			<key>label</key>
-			<string>播放器效果</string>
+			<string>总开关</string>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 		</dict>
@@ -16,7 +16,7 @@
 			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>label</key>
-			<string>启用效果</string>
+			<string>启用插件</string>
 			<key>default</key>
 			<true/>
 			<key>defaults</key>
@@ -24,9 +24,10 @@
 			<key>key</key>
 			<string>Enabled</string>
 		</dict>
+		
 		<dict>
 			<key>label</key>
-			<string>圆角半径</string>
+			<string>播放器效果</string>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 		</dict>
@@ -49,12 +50,6 @@
 			<integer>20</integer>
 		</dict>
 		<dict>
-			<key>label</key>
-			<string>边框宽度</string>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
 			<key>showValue</key>
 			<true/>
 			<key>min</key>
@@ -71,12 +66,6 @@
 			<integer>10</integer>
 			<key>default</key>
 			<integer>2</integer>
-		</dict>
-		<dict>
-			<key>label</key>
-			<string>阴影范围</string>
-			<key>cell</key>
-			<string>PSGroupCell</string>
 		</dict>
 		<dict>
 			<key>showValue</key>
@@ -96,9 +85,47 @@
 			<key>default</key>
 			<integer>15</integer>
 		</dict>
+		
 		<dict>
 			<key>label</key>
-			<string>动画速度</string>
+			<string>文字效果</string>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<real>0.8</real>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>字体缩放</string>
+			<key>key</key>
+			<string>FontScale</string>
+			<key>max</key>
+			<real>2.0</real>
+			<key>default</key>
+			<real>1.15</real>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>彩虹文字</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>key</key>
+			<string>RainbowText</string>
+		</dict>
+		
+		<dict>
+			<key>label</key>
+			<string>彩虹动画</string>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 		</dict>
@@ -112,13 +139,50 @@
 			<key>cell</key>
 			<string>PSSliderCell</string>
 			<key>label</key>
-			<string>彩虹速度</string>
+			<string>动画速度</string>
 			<key>key</key>
 			<string>RainbowSpeed</string>
 			<key>max</key>
 			<integer>10</integer>
 			<key>default</key>
 			<integer>3</integer>
+		</dict>
+		
+		<dict>
+			<key>label</key>
+			<string>通知效果</string>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>启用通知效果</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>key</key>
+			<string>NotificationEnabled</string>
+		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>通知圆角</string>
+			<key>key</key>
+			<string>NotificationCornerRadius</string>
+			<key>max</key>
+			<integer>50</integer>
+			<key>default</key>
+			<integer>20</integer>
 		</dict>
 	</array>
 </dict>
