@@ -9,6 +9,6 @@
 	<key>icon</key>
 	<string>icon.png</string>
 	<key>label</key>
-	<string>音乐播放器发光效果</string>
+	<string>MusicFG</string>
 </dict>
 </plist>
