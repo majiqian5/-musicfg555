@@ -13,17 +13,33 @@
 }
 
 - (void)reloadPreferences {
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"musicfg"];
+    // rootless 越狱下，设置文件在这个路径
+    NSString *prefsPath = @"/var/jb/var/mobile/Library/Preferences/musicfg.plist";
+    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
     
-    self.enabled = [defaults boolForKey:@"Enabled"] ?: YES;
-    self.cornerRadius = [defaults floatForKey:@"CornerRadius"] ?: 20.0;
-    self.borderWidth = [defaults floatForKey:@"BorderWidth"] ?: 2.0;
-    self.shadowRadius = [defaults floatForKey:@"ShadowRadius"] ?: 15.0;
-    self.fontScale = [defaults floatForKey:@"FontScale"] ?: 1.15;
-    self.rainbowText = [defaults boolForKey:@"RainbowText"] ?: YES;
-    self.rainbowSpeed = [defaults floatForKey:@"RainbowSpeed"] ?: 3.0;
-    self.notificationEnabled = [defaults boolForKey:@"NotificationEnabled"] ?: YES;
-    self.notificationCornerRadius = [defaults floatForKey:@"NotificationCornerRadius"] ?: 20.0;
+    // 默认值
+    self.enabled = YES;
+    self.cornerRadius = 20.0;
+    self.borderWidth = 2.0;
+    self.shadowRadius = 15.0;
+    self.fontScale = 1.15;
+    self.rainbowText = YES;
+    self.rainbowSpeed = 3.0;
+    self.notificationEnabled = YES;
+    self.notificationCornerRadius = 20.0;
+    
+    // 如果有设置文件，读取设置值
+    if (prefs) {
+        if (prefs[@"Enabled"]) self.enabled = [prefs[@"Enabled"] boolValue];
+        if (prefs[@"CornerRadius"]) self.cornerRadius = [prefs[@"CornerRadius"] floatValue];
+        if (prefs[@"BorderWidth"]) self.borderWidth = [prefs[@"BorderWidth"] floatValue];
+        if (prefs[@"ShadowRadius"]) self.shadowRadius = [prefs[@"ShadowRadius"] floatValue];
+        if (prefs[@"FontScale"]) self.fontScale = [prefs[@"FontScale"] floatValue];
+        if (prefs[@"RainbowText"]) self.rainbowText = [prefs[@"RainbowText"] boolValue];
+        if (prefs[@"RainbowSpeed"]) self.rainbowSpeed = [prefs[@"RainbowSpeed"] floatValue];
+        if (prefs[@"NotificationEnabled"]) self.notificationEnabled = [prefs[@"NotificationEnabled"] boolValue];
+        if (prefs[@"NotificationCornerRadius"]) self.notificationCornerRadius = [prefs[@"NotificationCornerRadius"] floatValue];
+    }
 }
 
 @end
