@@ -1,17 +1,13 @@
+#import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
 @interface MFGPreferences : NSObject
 
-+ (instancetype)sharedInstance;
-
-// 总开关
 @property (nonatomic, assign) BOOL enabled;
 
-// 播放器大小与位置
+// 基础效果
 @property (nonatomic, assign) CGFloat playerSizeScale;
 @property (nonatomic, assign) CGFloat playerPositionY;
-
-// 圆角
 @property (nonatomic, assign) CGFloat cornerRadius;
 
 // 边框
@@ -24,9 +20,8 @@
 @property (nonatomic, assign) CGFloat shadowRadius;
 @property (nonatomic, strong) UIColor *shadowColor;
 @property (nonatomic, assign) BOOL shadowColorAnimation;
-@property (nonatomic, assign) CGFloat shadowAnimationSpeed;
 
-// 字体设置
+// 字体
 @property (nonatomic, assign) CGFloat fontSizeScale;
 @property (nonatomic, strong) UIColor *fontColor;
 @property (nonatomic, assign) BOOL rainbowTextEnabled;
@@ -47,7 +42,7 @@
 @property (nonatomic, strong) UIColor *glowColor;
 @property (nonatomic, assign) CGFloat glowSpeed;
 
-// 频谱可视化
+// 频谱
 @property (nonatomic, assign) BOOL spectrumEnabled;
 @property (nonatomic, assign) CGFloat spectrumHeight;
 @property (nonatomic, assign) NSInteger spectrumBarCount;
@@ -55,20 +50,19 @@
 @property (nonatomic, strong) UIColor *spectrumColor;
 @property (nonatomic, assign) BOOL spectrumRainbowEnabled;
 
-// 彩虹渐变效果
+// 全局彩虹
 @property (nonatomic, assign) CGFloat rainbowSpeed;
-
-// 颜色预设
-@property (nonatomic, strong) NSArray *colorPresets;
+@property (nonatomic, strong) NSArray *rainbowColors;
 
 // 通知效果
-@property (nonatomic, assign) BOOL platterEnabled;
-@property (nonatomic, assign) CGFloat platterCornerRadius;
-@property (nonatomic, assign) CGFloat platterBorderWidth;
-@property (nonatomic, assign) CGFloat platterShadowOffsetY;
-@property (nonatomic, assign) CGFloat platterShadowRadius;
-@property (nonatomic, assign) CGFloat platterShadowAnimationSpeed;
+@property (nonatomic, assign) BOOL notificationEnabled;
+@property (nonatomic, assign) CGFloat notificationCornerRadius;
+@property (nonatomic, assign) CGFloat notificationBorderWidth;
+@property (nonatomic, strong) UIColor *notificationBorderColor;
+@property (nonatomic, assign) CGFloat notificationShadowRadius;
+@property (nonatomic, strong) UIColor *notificationShadowColor;
 
++ (instancetype)sharedInstance;
 - (void)reloadPreferences;
 
 @end
