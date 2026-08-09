@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
-#import <MediaPlayer/MediaPlayer.h>
 
 @interface MFGEffectManager : NSObject
 @property (nonatomic, strong) CADisplayLink *displayLink;
@@ -51,6 +50,21 @@
 
 #pragma mark - 辅助函数
 
+// 用 runtime 获取当前播放时间（不需要 import 头文件）
+static NSTimeInterval getPlaybackTime() {
+    Class infoCenterClass = NSClassFromString(@"MPNowPlayingInfoCenter");
+    if (!infoCenterClass) return 0;
+    
+    id center = [infoCenterClass performSelector:@selector(defaultCenter)];
+    if (!center) return 0;
+    
+    NSDictionary *info = [center valueForKey:@"nowPlayingInfo"];
+    if (!info) return 0;
+    
+    NSNumber *time = info[@"MPNowPlayingInfoPropertyElapsedPlaybackTime"];
+    return time ? [time doubleValue] : 0;
+}
+
 // 严格判断：只有明确的音乐播放器视图才算（排除通知）
 static BOOL isMusicPlayerStrict(UIView *view) {
     NSString *className = NSStringFromClass([view class]);
@@ -77,15 +91,7 @@ static BOOL isInMusicPlayerStrict(UIView *view) {
     return NO;
 }
 
-// 获取当前播放时间（用于频谱同步）
-static NSTimeInterval getCurrentPlaybackTime() {
-    NSDictionary *info = [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo;
-    if (!info) return 0;
-    NSNumber *time = info[MPNowPlayingInfoPropertyElapsedPlaybackTime];
-    return time ? [time doubleValue] : 0;
-}
-
-// 伪随机数生成（用播放时间做种子，确保同一段音乐频谱一样）
+// 伪随机数生成（用播放时间做种子）
 static float pseudoRandom(int seed, int index) {
     int n = seed * 1103515245 + index * 12345;
     n = (n >> 16) & 0x7fff;
@@ -103,7 +109,6 @@ static void addSpectrumToView(UIView *view) {
     CGFloat totalWidth = barCount * barWidth + (barCount - 1) * spacing;
     CGFloat startX = (view.bounds.size.width - totalWidth) / 2;
     CGFloat maxHeight = 40.0;
-    // 放在垂直中间位置
     CGFloat centerY = view.bounds.size.height / 2;
     
     for (NSInteger i = 0; i < barCount; i++) {
@@ -112,7 +117,6 @@ static void addSpectrumToView(UIView *view) {
                                                                barWidth, maxHeight)];
         bar.tag = 77777 + i;
         bar.layer.cornerRadius = barWidth / 2;
-        // 彩虹色
         CGFloat hue = (CGFloat)i / barCount;
         bar.backgroundColor = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:0.9];
         bar.layer.shadowColor = bar.backgroundColor.CGColor;
@@ -124,8 +128,8 @@ static void addSpectrumToView(UIView *view) {
 }
 
 static void updateSpectrum(UIView *view) {
-    NSTimeInterval currentTime = getCurrentPlaybackTime();
-    int seed = (int)(currentTime * 10); // 每0.1秒变一次
+    NSTimeInterval currentTime = getPlaybackTime();
+    int seed = (int)(currentTime * 10);
     CGFloat centerY = view.bounds.size.height / 2;
     CGFloat maxHeight = 40.0;
     
@@ -133,7 +137,6 @@ static void updateSpectrum(UIView *view) {
         UIView *bar = [view viewWithTag:77777 + i];
         if (!bar) continue;
         
-        // 用播放时间生成伪随机高度，模拟频谱
         float rand1 = pseudoRandom(seed, i);
         float rand2 = pseudoRandom(seed + 1, i + 100);
         float height = maxHeight * (0.3 + 0.7 * (rand1 * 0.6 + rand2 * 0.4));
@@ -154,15 +157,12 @@ static void updateSpectrum(UIView *view) {
     
     // 宽松判断：边框阴影效果（通知也有）
     if (isMusicPlayerLoose(self)) {
-        // 圆角
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
         
-        // 彩虹边框
         self.layer.borderWidth = 2.0;
         self.layer.borderColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
         
-        // 发光阴影
         self.layer.shadowColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0].CGColor;
         self.layer.shadowOffset = CGSizeZero;
         self.layer.shadowRadius = 15.0;
