@@ -1,3 +1,4 @@
+#import <spawn.h>
 #import <Preferences/Preferences.h>
 
 @interface MFGRootListController : PSListController
@@ -20,7 +21,6 @@
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     [super setPreferenceValue:value specifier:specifier];
     
-    // 保存设置
     NSString *key = [specifier propertyForKey:@"key"];
     if (key) {
         NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:
@@ -30,7 +30,6 @@
         [prefs writeToFile:@"/var/mobile/Library/Preferences/musicfg.plist" atomically:YES];
     }
     
-    // 通知 SpringBoard 更新
     [[NSNotificationCenter defaultCenter] postNotificationName:@"musicfg/preferencesChanged" object:nil];
 }
 
