@@ -3,12 +3,16 @@
 <plist version="1.0">
 <dict>
 	<key>bundle</key>
-	<string>musicfg.bundle</string>
+	<string>musicfg</string>
 	<key>cell</key>
 	<string>PSLinkCell</string>
+	<key>detail</key>
+	<string>MFGRootListController</string>
 	<key>icon</key>
 	<string>icon.png</string>
+	<key>isController</key>
+	<true/>
 	<key>label</key>
-	<string>MusicFG</string>
+	<string>音乐播放器发光效果</string>
 </dict>
 </plist>
