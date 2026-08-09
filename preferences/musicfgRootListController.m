@@ -1,9 +1,9 @@
 #import <Preferences/Preferences.h>
 
-@interface MFGRootListController : PSListController
+@interface musicfgRootListController : PSListController
 @end
 
-@implementation MFGRootListController
+@implementation musicfgRootListController
 
 - (id)specifiers {
 	if (!_specifiers) {
