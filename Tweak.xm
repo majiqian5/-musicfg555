@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
+#import "MFGPreferences.h"
 
 @interface MFGEffectManager : NSObject
 @property (nonatomic, strong) CADisplayLink *displayLink;
@@ -30,12 +31,25 @@
         self.playerViews = [NSMutableArray array];
         self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
         [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+        
+        // 监听设置变化
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), 
+                                        (__bridge void *)self, 
+                                        &onPrefsChanged, 
+                                        CFSTR("musicfg/prefsChanged"), 
+                                        NULL, 
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
     }
     return self;
 }
 
+static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    [[MFGPreferences sharedInstance] reloadPreferences];
+}
+
 - (void)tick:(CADisplayLink *)link {
-    self.phase += 0.003;
+    CGFloat speed = [MFGPreferences sharedInstance].rainbowSpeed / 1000.0;
+    self.phase += speed;
     if (self.phase > 1.0) self.phase -= 1.0;
     [self updateAllEffects];
 }
@@ -53,6 +67,9 @@
 }
 
 - (void)updateAllEffects {
+    MFGPreferences *prefs = [MFGPreferences sharedInstance];
+    if (!prefs.enabled) return;
+    
     UIColor *rainbowColor = [self rainbowColorWithOffset:0];
     UIColor *textColor = [self rainbowColorWithOffset:0.3];
     UIColor *progressColor = [self rainbowColorWithOffset:0.6];
@@ -62,22 +79,48 @@
     for (UIView *view in self.playerViews) {
         if (!view.superview) continue;
         
-        // 边框和阴影
-        view.layer.borderColor = rainbowColor.CGColor;
-        view.layer.shadowColor = rainbowColor.CGColor;
+        NSString *className = NSStringFromClass([view class]);
+        BOOL isNotification = [className containsString:@"Notification"];
         
-        // 全局 tintColor
+        // 通知效果开关
+        if (isNotification && !prefs.notificationEnabled) continue;
+        
+        CGFloat radius = isNotification ? prefs.notificationCornerRadius : prefs.cornerRadius;
+        
+        // 圆角
+        view.layer.cornerRadius = radius;
+        view.layer.masksToBounds = NO;
+        
+        // 边框
+        view.layer.borderWidth = prefs.borderWidth;
+        view.layer.borderColor = rainbowColor.CGColor;
+        
+        // 阴影
+        view.layer.shadowColor = rainbowColor.CGColor;
+        view.layer.shadowOffset = CGSizeZero;
+        view.layer.shadowRadius = prefs.shadowRadius;
+        view.layer.shadowOpacity = 0.8;
+        
+        // tintColor
         view.tintColor = progressColor;
         
         // 递归修改所有子视图
-        [self updateSubview:view textColor:textColor tintColor:progressColor labelClass:UILabelClass];
+        [self updateSubview:view 
+                   textColor:prefs.rainbowText ? textColor : nil
+                 tintColor:progressColor
+                 fontScale:prefs.fontScale
+                 labelClass:UILabelClass];
     }
 }
 
-- (void)updateSubview:(UIView *)view textColor:(UIColor *)textColor tintColor:(UIColor *)tintColor labelClass:(Class)labelClass {
+- (void)updateSubview:(UIView *)view 
+           textColor:(UIColor *)textColor 
+         tintColor:(UIColor *)tintColor
+         fontScale:(CGFloat)fontScale
+         labelClass:(Class)labelClass {
     
     for (UIView *subview in view.subviews) {
-        // 所有子视图都设置 tintColor（影响进度条、滑块、按钮等所有控件）
+        // 所有子视图都设置 tintColor
         subview.tintColor = tintColor;
         
         // 标签
@@ -86,16 +129,22 @@
                 subview.tag = 66666;
                 UIFont *oldFont = [subview valueForKey:@"font"];
                 if (oldFont && oldFont.pointSize > 0) {
-                    CGFloat newSize = oldFont.pointSize * 1.15;
+                    CGFloat newSize = oldFont.pointSize * fontScale;
                     UIFont *newFont = [UIFont boldSystemFontOfSize:newSize];
                     [subview setValue:newFont forKey:@"font"];
                 }
             }
-            [subview setValue:textColor forKey:@"textColor"];
+            if (textColor) {
+                [subview setValue:textColor forKey:@"textColor"];
+            }
         }
         
         // 递归
-        [self updateSubview:subview textColor:textColor tintColor:tintColor labelClass:labelClass];
+        [self updateSubview:subview 
+                   textColor:textColor 
+                 tintColor:tintColor
+                 fontScale:fontScale
+                 labelClass:labelClass];
     }
 }
 
@@ -110,16 +159,10 @@
     BOOL isPlayer = [className containsString:@"Platter"] ||
                     [className containsString:@"NowPlaying"] ||
                     [className containsString:@"MediaControl"] ||
-                    [className containsString:@"CCUIMedia"];
+                    [className containsString:@"CCUIMedia"] ||
+                    [className containsString:@"Notification"];
     
     if (isPlayer) {
-        self.layer.cornerRadius = 20.0;
-        self.layer.masksToBounds = NO;
-        self.layer.borderWidth = 2.0;
-        self.layer.shadowOffset = CGSizeZero;
-        self.layer.shadowRadius = 15.0;
-        self.layer.shadowOpacity = 0.8;
-        
         [[MFGEffectManager sharedInstance] registerPlayerView:self];
     }
 }
@@ -127,5 +170,6 @@
 %end
 
 %ctor {
+    [MFGPreferences sharedInstance];
     [MFGEffectManager sharedInstance];
 }
