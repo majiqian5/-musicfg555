@@ -2,71 +2,72 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
-// 递归查找子视图里有没有进度条
-static BOOL hasProgressView(UIView *view) {
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UIProgressView class]]) {
-            return YES;
-        }
-        if (hasProgressView(subview)) {
-            return YES;
-        }
-    }
-    return NO;
+@interface MFGRainbowManager : NSObject
+@property (nonatomic, strong) CADisplayLink *displayLink;
+@property (nonatomic, assign) CGFloat phase;
++ (instancetype)sharedInstance;
+- (UIColor *)currentRainbowColor;
+@end
+
+@implementation MFGRainbowManager
+
++ (instancetype)sharedInstance {
+    static MFGRainbowManager *instance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[MFGRainbowManager alloc] init];
+    });
+    return instance;
 }
 
-// 判断是不是音乐播放器
-static BOOL isMusicPlayer(UIView *view) {
-    NSString *className = NSStringFromClass([view class]);
-    
-    // 先看类名有没有音乐相关的
-    if ([className containsString:@"NowPlaying"] ||
-        [className containsString:@"MediaControl"] ||
-        [className containsString:@"CCUIMedia"]) {
-        return YES;
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        self.phase = 0;
+        self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
+        [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
     }
-    
-    // 如果是 Platter 视图，检查有没有进度条（音乐播放器才有进度条）
-    if ([className containsString:@"Platter"]) {
-        if (hasProgressView(view)) {
-            return YES;
-        }
-    }
-    
-    return NO;
+    return self;
 }
 
-// 递归找父视图
-static BOOL isInMusicPlayer(UIView *view) {
-    UIView *superview = view;
-    while (superview) {
-        if (isMusicPlayer(superview)) {
-            return YES;
-        }
-        superview = superview.superview;
-    }
-    return NO;
+- (void)tick:(CADisplayLink *)link {
+    self.phase += 0.005;
+    if (self.phase > 1.0) self.phase -= 1.0;
 }
+
+- (UIColor *)currentRainbowColor {
+    CGFloat hue = self.phase;
+    return [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:1.0];
+}
+
+@end
 
 %hook UIView
 
 - (void)layoutSubviews {
     %orig;
     
-    if (isMusicPlayer(self)) {
+    NSString *className = NSStringFromClass([self class]);
+    
+    BOOL isPlayer = [className containsString:@"NowPlaying"] ||
+                    [className containsString:@"Platter"] ||
+                    [className containsString:@"MediaControl"] ||
+                    [className containsString:@"CCUIMedia"];
+    
+    if (isPlayer) {
         // 圆角
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
         
-        // 粉色边框
-        self.layer.borderWidth = 2.0;
-        self.layer.borderColor = [UIColor systemPinkColor].CGColor;
+        // 彩虹边框
+        self.layer.borderWidth = 3.0;
+        self.layer.borderColor = [[MFGRainbowManager sharedInstance] currentRainbowColor].CGColor;
         
-        // 发光阴影
-        self.layer.shadowColor = [UIColor systemPinkColor].CGColor;
+        // 彩虹发光阴影
+        self.layer.shadowColor = [[MFGRainbowManager sharedInstance] currentRainbowColor].CGColor;
         self.layer.shadowOffset = CGSizeMake(0, 0);
-        self.layer.shadowRadius = 20.0;
-        self.layer.shadowOpacity = 0.9;
+        self.layer.shadowRadius = 15.0;
+        self.layer.shadowOpacity = 0.8;
     }
 }
 
@@ -77,8 +78,21 @@ static BOOL isInMusicPlayer(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayer(self)) {
-        self.textColor = [UIColor whiteColor];
+    UIView *superview = self.superview;
+    BOOL inPlayer = NO;
+    while (superview) {
+        NSString *cls = NSStringFromClass([superview class]);
+        if ([cls containsString:@"NowPlaying"] || 
+            [cls containsString:@"Platter"] ||
+            [cls containsString:@"Media"]) {
+            inPlayer = YES;
+            break;
+        }
+        superview = superview.superview;
+    }
+    
+    if (inPlayer) {
+        self.textColor = [[MFGRainbowManager sharedInstance] currentRainbowColor];
     }
 }
 
@@ -89,13 +103,25 @@ static BOOL isInMusicPlayer(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isInMusicPlayer(self)) {
-        self.progressTintColor = [UIColor systemPinkColor];
+    UIView *superview = self.superview;
+    BOOL inPlayer = NO;
+    while (superview) {
+        NSString *cls = NSStringFromClass([superview class]);
+        if ([cls containsString:@"NowPlaying"] || [cls containsString:@"Platter"]) {
+            inPlayer = YES;
+            break;
+        }
+        superview = superview.superview;
+    }
+    
+    if (inPlayer) {
+        self.progressTintColor = [[MFGRainbowManager sharedInstance] currentRainbowColor];
     }
 }
 
 %end
 
 %ctor {
-    // 空的，安全第一
+    // 启动彩虹动画管理器
+    [MFGRainbowManager sharedInstance];
 }
