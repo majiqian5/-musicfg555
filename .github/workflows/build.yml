@@ -23,15 +23,14 @@ jobs:
       - name: Download iOS SDK
         run: |
           git clone --depth 1 https://github.com/theos/sdks.git
-          cp -r sdks/iPhoneOS16.5.sdk $THEOS/sdks/ 2>/dev/null || \
-          cp -r sdks/iPhoneOS15.5.sdk $THEOS/sdks/ 2>/dev/null || \
-          cp -r sdks/iPhoneOS*.sdk $THEOS/sdks/
+          cp -r sdks/iPhoneOS15.5.sdk $THEOS/sdks/
         env:
           THEOS: ${{ github.workspace }}/theos
       
       - name: Build Package
         run: |
           export THEOS=${{ github.workspace }}/theos
+          export SDKVERSION=15.5
           make package FINALPACKAGE=1
       
       - name: Upload deb
