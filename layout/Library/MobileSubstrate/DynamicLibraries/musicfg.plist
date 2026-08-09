@@ -1,1 +1,1 @@
-Library/MobileSubstrate/DynamicLibraries/musicfg.plist
+{ Filter = { Bundles = ( "com.apple.springboard" ); }; }
