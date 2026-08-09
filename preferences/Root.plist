@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>title</key>
-	<string>MusicFG</string>
+	<string>音乐播放器发光效果</string>
 	<key>items</key>
 	<array>
 		<dict>
@@ -16,13 +16,13 @@
 			<key>key</key>
 			<string>Enabled</string>
 			<key>label</key>
-			<string>Enabled</string>
+			<string>启用插件</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Effects</string>
+			<string>基础效果</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -34,11 +34,27 @@
 			<key>key</key>
 			<string>CornerRadius</string>
 			<key>label</key>
-			<string>Corner Radius</string>
+			<string>圆角大小</string>
 			<key>min</key>
 			<integer>0</integer>
 			<key>max</key>
 			<integer>50</integer>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<integer>2</integer>
+			<key>defaults</key>
+			<string>com.liuf.musicfg</string>
+			<key>key</key>
+			<string>BorderWidth</string>
+			<key>label</key>
+			<string>边框宽度</string>
+			<key>min</key>
+			<integer>0</integer>
+			<key>max</key>
+			<integer>10</integer>
 		</dict>
 	</array>
 </dict>
