@@ -53,26 +53,46 @@
 }
 
 - (void)updateAllEffects {
-    UIColor *borderColor = [self rainbowColorWithOffset:0];
+    UIColor *rainbowColor = [self rainbowColorWithOffset:0];
     UIColor *textColor = [self rainbowColorWithOffset:0.3];
     UIColor *progressColor = [self rainbowColorWithOffset:0.6];
-    UIColor *sliderColor = [self rainbowColorWithOffset:0.8];
+    
+    Class UILabelClass = NSClassFromString(@"UILabel");
+    Class UIProgressViewClass = NSClassFromString(@"UIProgressView");
+    Class UISliderClass = NSClassFromString(@"UISlider");
     
     for (UIView *view in self.playerViews) {
         if (!view.superview) continue;
         
-        view.layer.borderColor = borderColor.CGColor;
-        view.layer.shadowColor = borderColor.CGColor;
+        // 边框和阴影
+        view.layer.borderColor = rainbowColor.CGColor;
+        view.layer.shadowColor = rainbowColor.CGColor;
         
-        [self updateSubview:view textColor:textColor progressColor:progressColor sliderColor:sliderColor];
+        // 全局 tintColor（影响进度条、滑块等）
+        view.tintColor = progressColor;
+        
+        // 递归更新所有子视图
+        [self updateSubview:view 
+                   textColor:textColor 
+             progressColor:progressColor 
+              sliderColor:rainbowColor
+               labelClass:UILabelClass
+          progressViewClass:UIProgressViewClass
+              sliderClass:UISliderClass];
     }
 }
 
-- (void)updateSubview:(UIView *)view textColor:(UIColor *)textColor progressColor:(UIColor *)progressColor sliderColor:(UIColor *)sliderColor {
+- (void)updateSubview:(UIView *)view 
+           textColor:(UIColor *)textColor 
+         progressColor:(UIColor *)progressColor 
+          sliderColor:(UIColor *)sliderColor
+           labelClass:(Class)labelClass
+      progressViewClass:(Class)progressViewClass
+          sliderClass:(Class)sliderClass {
+    
     for (UIView *subview in view.subviews) {
-        NSString *className = NSStringFromClass([subview class]);
-        
-        if ([className containsString:@"Label"]) {
+        // 标签
+        if ([subview isKindOfClass:labelClass]) {
             if (subview.tag != 66666) {
                 subview.tag = 66666;
                 UIFont *oldFont = [subview valueForKey:@"font"];
@@ -85,18 +105,29 @@
             [subview setValue:textColor forKey:@"textColor"];
         }
         
-        if ([className containsString:@"ProgressView"]) {
+        // 进度条
+        if ([subview isKindOfClass:progressViewClass]) {
             [subview setValue:progressColor forKey:@"progressTintColor"];
             [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"trackTintColor"];
+            subview.tintColor = progressColor;
         }
         
-        if ([className containsString:@"Slider"]) {
+        // 滑块/音量条
+        if ([subview isKindOfClass:sliderClass]) {
             [subview setValue:sliderColor forKey:@"minimumTrackTintColor"];
             [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"maximumTrackTintColor"];
             [subview setValue:[UIColor whiteColor] forKey:@"thumbTintColor"];
+            subview.tintColor = sliderColor;
         }
         
-        [self updateSubview:subview textColor:textColor progressColor:progressColor sliderColor:sliderColor];
+        // 递归
+        [self updateSubview:subview 
+                   textColor:textColor 
+             progressColor:progressColor 
+              sliderColor:sliderColor
+               labelClass:labelClass
+          progressViewClass:progressViewClass
+              sliderClass:sliderClass];
     }
 }
 
