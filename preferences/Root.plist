@@ -6,7 +6,7 @@
 	<string>音乐播放器发光效果</string>
 	<key>items</key>
 	<array>
-		<!-- 总开关 -->
+		<!-- ========== 总开关 ========== -->
 		<dict>
 			<key>label</key>
 			<string>总开关</string>
@@ -28,7 +28,7 @@
 			<string>musicfg/prefsChanged</string>
 		</dict>
 		
-		<!-- 播放器外观 -->
+		<!-- ========== 播放器外观 ========== -->
 		<dict>
 			<key>label</key>
 			<string>播放器外观</string>
@@ -75,6 +75,14 @@
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
+		
+		<!-- ========== 阴影效果 ========== -->
+		<dict>
+			<key>label</key>
+			<string>阴影效果</string>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
 		<dict>
 			<key>showValue</key>
 			<true/>
@@ -115,8 +123,28 @@
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>阴影偏移</string>
+			<key>key</key>
+			<string>ShadowOffsetY</string>
+			<key>max</key>
+			<integer>20</integer>
+			<key>default</key>
+			<integer>0</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
 		
-		<!-- 文字效果 -->
+		<!-- ========== 文字效果 ========== -->
 		<dict>
 			<key>label</key>
 			<string>文字效果</string>
@@ -172,7 +200,7 @@
 			<string>musicfg/prefsChanged</string>
 		</dict>
 		
-		<!-- 彩虹动画 -->
+		<!-- ========== 彩虹动画 ========== -->
 		<dict>
 			<key>label</key>
 			<string>彩虹动画</string>
@@ -228,7 +256,7 @@
 			<string>musicfg/prefsChanged</string>
 		</dict>
 		
-		<!-- 通知效果 -->
+		<!-- ========== 通知效果 ========== -->
 		<dict>
 			<key>label</key>
 			<string>通知效果</string>
@@ -286,6 +314,26 @@
 			<integer>10</integer>
 			<key>default</key>
 			<integer>2</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>通知阴影范围</string>
+			<key>key</key>
+			<string>NotificationShadowRadius</string>
+			<key>max</key>
+			<integer>30</integer>
+			<key>default</key>
+			<integer>10</integer>
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
