@@ -2,31 +2,45 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
-// 判断是不是音乐播放器视图
-static BOOL isMusicPlayerView(UIView *view) {
-    NSString *className = NSStringFromClass([view class]);
-    
-    // 只匹配这些明确的音乐播放器类
-    NSArray *exactKeywords = @[
-        @"NowPlaying",
-        @"MediaControl",
-        @"CCUIMediaControls",
-        @"SBMedia"
-    ];
-    
-    for (NSString *keyword in exactKeywords) {
-        if ([className containsString:keyword]) {
+// 递归查找子视图里有没有进度条
+static BOOL hasProgressView(UIView *view) {
+    for (UIView *subview in view.subviews) {
+        if ([subview isKindOfClass:[UIProgressView class]]) {
+            return YES;
+        }
+        if (hasProgressView(subview)) {
             return YES;
         }
     }
     return NO;
 }
 
-// 递归找父视图里有没有音乐播放器
+// 判断是不是音乐播放器
+static BOOL isMusicPlayer(UIView *view) {
+    NSString *className = NSStringFromClass([view class]);
+    
+    // 先看类名有没有音乐相关的
+    if ([className containsString:@"NowPlaying"] ||
+        [className containsString:@"MediaControl"] ||
+        [className containsString:@"CCUIMedia"]) {
+        return YES;
+    }
+    
+    // 如果是 Platter 视图，检查有没有进度条（音乐播放器才有进度条）
+    if ([className containsString:@"Platter"]) {
+        if (hasProgressView(view)) {
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+
+// 递归找父视图
 static BOOL isInMusicPlayer(UIView *view) {
     UIView *superview = view;
     while (superview) {
-        if (isMusicPlayerView(superview)) {
+        if (isMusicPlayer(superview)) {
             return YES;
         }
         superview = superview.superview;
@@ -39,12 +53,12 @@ static BOOL isInMusicPlayer(UIView *view) {
 - (void)layoutSubviews {
     %orig;
     
-    if (isMusicPlayerView(self)) {
+    if (isMusicPlayer(self)) {
         // 圆角
         self.layer.cornerRadius = 20.0;
         self.layer.masksToBounds = NO;
         
-        // 渐变发光边框效果
+        // 粉色边框
         self.layer.borderWidth = 2.0;
         self.layer.borderColor = [UIColor systemPinkColor].CGColor;
         
@@ -64,10 +78,7 @@ static BOOL isInMusicPlayer(UIView *view) {
     %orig;
     
     if (isInMusicPlayer(self)) {
-        // 歌曲标题颜色
         self.textColor = [UIColor whiteColor];
-        self.shadowColor = [UIColor systemPinkColor];
-        self.shadowOffset = CGSizeMake(0, 0);
     }
 }
 
@@ -79,9 +90,7 @@ static BOOL isInMusicPlayer(UIView *view) {
     %orig;
     
     if (isInMusicPlayer(self)) {
-        // 进度条颜色
         self.progressTintColor = [UIColor systemPinkColor];
-        self.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
     }
 }
 
