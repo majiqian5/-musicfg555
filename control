@@ -1,0 +1,9 @@
+Package: com.liuf.musicfg
+Name: 音乐播放器发光效果+
+Version: 2.0.0
+Architecture: iphoneos-arm64
+Description: 音乐播放器发光效果增强版 - 大小/字体/频谱/光圈/进度条全定制
+Maintainer: liuf
+Author: liuf
+Section: Tweaks
+Depends: mobilesubstrate, preferenceloader
