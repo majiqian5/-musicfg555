@@ -42,6 +42,11 @@ jobs:
         run: |
           find . -name ".gitkeep" -delete
       
+      - name: Convert plists to binary
+        run: |
+          find . -name "*.plist" -exec plutil -convert binary1 {} \;
+          echo "All plists converted to binary format"
+      
       - name: Build Package (Rootless)
         run: |
           export THEOS=${{ github.workspace }}/theos
