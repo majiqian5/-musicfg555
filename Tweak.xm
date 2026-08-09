@@ -1,17 +1,31 @@
 #import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
 
 %hook UIView
 
-- (void)didMoveToWindow {
+- (void)layoutSubviews {
     %orig;
-    // 把所有视图背景改成红色，测试注入是否成功
-    if (self.window) {
-        self.backgroundColor = [UIColor redColor];
+    
+    NSString *className = NSStringFromClass([self class]);
+    
+    // 只处理音乐播放器相关的视图
+    BOOL isPlayer = [className containsString:@"NowPlaying"] ||
+                    [className containsString:@"Platter"] ||
+                    [className containsString:@"MediaControl"] ||
+                    [className containsString:@"CCUIMedia"];
+    
+    if (isPlayer) {
+        // 加个红色边框，一眼就能看到有没有效果
+        self.layer.borderWidth = 3.0;
+        self.layer.borderColor = [UIColor redColor].CGColor;
+        self.layer.cornerRadius = 20.0;
+        self.layer.masksToBounds = YES;
     }
 }
 
 %end
 
 %ctor {
-    // 空的，避免初始化崩溃
+    // 什么都不初始化，避免崩溃
 }
