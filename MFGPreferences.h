@@ -5,7 +5,7 @@
 
 @property (nonatomic, assign) BOOL enabled;
 
-// 基础效果
+// 基础
 @property (nonatomic, assign) CGFloat playerSizeScale;
 @property (nonatomic, assign) CGFloat playerPositionY;
 @property (nonatomic, assign) CGFloat cornerRadius;
@@ -20,6 +20,7 @@
 @property (nonatomic, assign) CGFloat shadowRadius;
 @property (nonatomic, strong) UIColor *shadowColor;
 @property (nonatomic, assign) BOOL shadowColorAnimation;
+@property (nonatomic, assign) CGFloat shadowAnimationSpeed;
 
 // 字体
 @property (nonatomic, assign) CGFloat fontSizeScale;
@@ -61,6 +62,11 @@
 @property (nonatomic, strong) UIColor *notificationBorderColor;
 @property (nonatomic, assign) CGFloat notificationShadowRadius;
 @property (nonatomic, strong) UIColor *notificationShadowColor;
+
+// 额外属性
+@property (nonatomic, assign) CGFloat platterShadowOffsetY;
+@property (nonatomic, assign) CGFloat platterShadowRadius;
+@property (nonatomic, assign) CGFloat platterShadowAnimationSpeed;
 
 + (instancetype)sharedInstance;
 - (void)reloadPreferences;
