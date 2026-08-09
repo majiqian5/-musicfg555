@@ -32,7 +32,6 @@
         self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
         [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
         
-        // 监听设置变化
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), 
                                         (__bridge void *)self, 
                                         &onPrefsChanged, 
@@ -86,11 +85,11 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
         NSString *className = NSStringFromClass([view class]);
         BOOL isNotification = [className containsString:@"Notification"];
         
-        // 通知效果开关
         if (isNotification && !prefs.notificationEnabled) continue;
         
         CGFloat radius = isNotification ? prefs.notificationCornerRadius : prefs.cornerRadius;
         CGFloat borderW = isNotification ? prefs.notificationBorderWidth : prefs.borderWidth;
+        CGFloat shadowR = isNotification ? prefs.notificationShadowRadius : prefs.shadowRadius;
         
         // 圆角
         view.layer.cornerRadius = radius;
@@ -102,14 +101,14 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
         
         // 阴影
         view.layer.shadowColor = shadowColor.CGColor;
-        view.layer.shadowOffset = CGSizeZero;
-        view.layer.shadowRadius = prefs.shadowRadius;
+        view.layer.shadowOffset = CGSizeMake(0, prefs.shadowOffsetY);
+        view.layer.shadowRadius = shadowR;
         view.layer.shadowOpacity = prefs.shadowOpacity;
         
         // tintColor
         view.tintColor = progressColor;
         
-        // 递归修改所有子视图
+        // 递归修改子视图
         [self updateSubview:view 
                    textColor:prefs.rainbowText ? textColor : nil
                  tintColor:progressColor
@@ -127,10 +126,8 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
          labelClass:(Class)labelClass {
     
     for (UIView *subview in view.subviews) {
-        // 所有子视图都设置 tintColor
         subview.tintColor = tintColor;
         
-        // 标签
         if ([subview isKindOfClass:labelClass]) {
             if (subview.tag != 66666) {
                 subview.tag = 66666;
@@ -146,7 +143,6 @@ static void onPrefsChanged(CFNotificationCenterRef center, void *observer, CFStr
             }
         }
         
-        // 递归
         [self updateSubview:subview 
                    textColor:textColor 
                  tintColor:tintColor
