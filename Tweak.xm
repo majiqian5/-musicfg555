@@ -58,83 +58,42 @@ static BOOL isPlayerView(UIView *view) {
            [className containsString:@"CCUIMedia"];
 }
 
-static BOOL isInPlayerView(UIView *view) {
-    UIView *superview = view;
-    while (superview) {
-        if (isPlayerView(superview)) return YES;
-        superview = superview.superview;
-    }
-    return NO;
-}
-
-// 用 runtime 获取播放时间
-static NSTimeInterval getPlaybackTime() {
-    Class infoCenterClass = NSClassFromString(@"MPNowPlayingInfoCenter");
-    if (!infoCenterClass) return 0;
+// 递归修改子视图中的进度条和滑块
+static void updateSubviewsInPlayer(UIView *view) {
+    UIColor *rainbowColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.5];
     
-    id center = [infoCenterClass performSelector:@selector(defaultCenter)];
-    if (!center) return 0;
-    
-    NSDictionary *info = [center valueForKey:@"nowPlayingInfo"];
-    if (!info) return 0;
-    
-    NSNumber *time = info[@"MPNowPlayingInfoPropertyElapsedPlaybackTime"];
-    return time ? [time doubleValue] : 0;
-}
-
-static float pseudoRandom(int seed, int index) {
-    int n = seed * 1103515245 + index * 12345;
-    n = (n >> 16) & 0x7fff;
-    return (float)n / 32767.0f;
-}
-
-#pragma mark - 频谱（放在中间）
-
-static void addSpectrum(UIView *view) {
-    if ([view viewWithTag:77777]) return;
-    
-    NSInteger barCount = 16;
-    CGFloat barWidth = 5.0;
-    CGFloat spacing = 3.0;
-    CGFloat totalWidth = barCount * barWidth + (barCount - 1) * spacing;
-    CGFloat startX = (view.bounds.size.width - totalWidth) / 2;
-    CGFloat maxHeight = 40.0;
-    CGFloat centerY = view.bounds.size.height / 2;
-    
-    for (NSInteger i = 0; i < barCount; i++) {
-        UIView *bar = [[UIView alloc] initWithFrame:CGRectMake(startX + i * (barWidth + spacing), 
-                                                               centerY - maxHeight / 2, 
-                                                               barWidth, maxHeight)];
-        bar.tag = 77777 + i;
-        bar.layer.cornerRadius = barWidth / 2;
-        CGFloat hue = (CGFloat)i / barCount;
-        bar.backgroundColor = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:0.9];
-        bar.layer.shadowColor = bar.backgroundColor.CGColor;
-        bar.layer.shadowOffset = CGSizeZero;
-        bar.layer.shadowRadius = 5.0;
-        bar.layer.shadowOpacity = 1.0;
-        [view addSubview:bar];
-    }
-}
-
-static void updateSpectrum(UIView *view) {
-    NSTimeInterval currentTime = getPlaybackTime();
-    int seed = (int)(currentTime * 10);
-    CGFloat centerY = view.bounds.size.height / 2;
-    CGFloat maxHeight = 40.0;
-    
-    for (NSInteger i = 0; i < 16; i++) {
-        UIView *bar = [view viewWithTag:77777 + i];
-        if (!bar) continue;
+    for (UIView *subview in view.subviews) {
+        // 进度条
+        if ([subview isKindOfClass:NSClassFromString(@"UIProgressView")]) {
+            UISlider *progress = (UISlider *)subview;
+            [progress setValue:0.5 animated:NO]; // 随便调用一下，确保类型正确
+            // 用 KVC 设置颜色
+            [subview setValue:rainbowColor forKey:@"progressTintColor"];
+            [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"trackTintColor"];
+        }
         
-        float rand1 = pseudoRandom(seed, i);
-        float rand2 = pseudoRandom(seed + 1, i + 100);
-        float height = maxHeight * (0.3 + 0.7 * (rand1 * 0.6 + rand2 * 0.4));
+        // 滑块/音量条
+        if ([subview isKindOfClass:NSClassFromString(@"UISlider")]) {
+            [subview setValue:rainbowColor forKey:@"minimumTrackTintColor"];
+            [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"maximumTrackTintColor"];
+            [subview setValue:[UIColor whiteColor] forKey:@"thumbTintColor"];
+        }
         
-        CGRect frame = bar.frame;
-        frame.size.height = height;
-        frame.origin.y = centerY - height / 2;
-        bar.frame = frame;
+        // 标签
+        if ([subview isKindOfClass:NSClassFromString(@"UILabel")]) {
+            if (subview.tag != 66666) {
+                subview.tag = 66666;
+                UIFont *oldFont = [subview valueForKey:@"font"];
+                CGFloat newSize = oldFont.pointSize * 1.2;
+                UIFont *newFont = [UIFont boldSystemFontOfSize:newSize];
+                [subview setValue:newFont forKey:@"font"];
+            }
+            UIColor *textColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.3];
+            [subview setValue:textColor forKey:@"textColor"];
+        }
+        
+        // 递归处理子视图
+        updateSubviewsInPlayer(subview);
     }
 }
 
@@ -160,59 +119,8 @@ static void updateSpectrum(UIView *view) {
         self.layer.shadowRadius = 15.0;
         self.layer.shadowOpacity = 0.8;
         
-        // 频谱
-        addSpectrum(self);
-        updateSpectrum(self);
-    }
-}
-
-%end
-
-%hook UILabel
-
-- (void)layoutSubviews {
-    %orig;
-    
-    if (isInPlayerView(self)) {
-        if (self.tag != 66666) {
-            self.tag = 66666;
-            CGFloat newSize = self.font.pointSize * 1.2;
-            self.font = [UIFont boldSystemFontOfSize:newSize];
-        }
-        self.textColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.3];
-    }
-}
-
-%end
-
-%hook UIProgressView
-
-- (void)layoutSubviews {
-    %orig;
-    
-    if (isInPlayerView(self)) {
-        self.progressTintColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.6];
-        self.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
-        
-        if (self.bounds.size.height != 4.0) {
-            CGRect bounds = self.bounds;
-            bounds.size.height = 4.0;
-            self.bounds = bounds;
-        }
-    }
-}
-
-%end
-
-%hook UISlider
-
-- (void)layoutSubviews {
-    %orig;
-    
-    if (isInPlayerView(self)) {
-        self.minimumTrackTintColor = [[MFGEffectManager sharedInstance] rainbowColorWithOffset:0.8];
-        self.maximumTrackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
-        self.thumbTintColor = [UIColor whiteColor];
+        // 递归修改所有子视图（进度条、音量条、文字）
+        updateSubviewsInPlayer(self);
     }
 }
 
