@@ -58,8 +58,6 @@
     UIColor *progressColor = [self rainbowColorWithOffset:0.6];
     
     Class UILabelClass = NSClassFromString(@"UILabel");
-    Class UIProgressViewClass = NSClassFromString(@"UIProgressView");
-    Class UISliderClass = NSClassFromString(@"UISlider");
     
     for (UIView *view in self.playerViews) {
         if (!view.superview) continue;
@@ -68,29 +66,20 @@
         view.layer.borderColor = rainbowColor.CGColor;
         view.layer.shadowColor = rainbowColor.CGColor;
         
-        // 全局 tintColor（影响进度条、滑块等）
+        // 全局 tintColor
         view.tintColor = progressColor;
         
-        // 递归更新所有子视图
-        [self updateSubview:view 
-                   textColor:textColor 
-             progressColor:progressColor 
-              sliderColor:rainbowColor
-               labelClass:UILabelClass
-          progressViewClass:UIProgressViewClass
-              sliderClass:UISliderClass];
+        // 递归修改所有子视图
+        [self updateSubview:view textColor:textColor tintColor:progressColor labelClass:UILabelClass];
     }
 }
 
-- (void)updateSubview:(UIView *)view 
-           textColor:(UIColor *)textColor 
-         progressColor:(UIColor *)progressColor 
-          sliderColor:(UIColor *)sliderColor
-           labelClass:(Class)labelClass
-      progressViewClass:(Class)progressViewClass
-          sliderClass:(Class)sliderClass {
+- (void)updateSubview:(UIView *)view textColor:(UIColor *)textColor tintColor:(UIColor *)tintColor labelClass:(Class)labelClass {
     
     for (UIView *subview in view.subviews) {
+        // 所有子视图都设置 tintColor（影响进度条、滑块、按钮等所有控件）
+        subview.tintColor = tintColor;
+        
         // 标签
         if ([subview isKindOfClass:labelClass]) {
             if (subview.tag != 66666) {
@@ -105,29 +94,8 @@
             [subview setValue:textColor forKey:@"textColor"];
         }
         
-        // 进度条
-        if ([subview isKindOfClass:progressViewClass]) {
-            [subview setValue:progressColor forKey:@"progressTintColor"];
-            [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"trackTintColor"];
-            subview.tintColor = progressColor;
-        }
-        
-        // 滑块/音量条
-        if ([subview isKindOfClass:sliderClass]) {
-            [subview setValue:sliderColor forKey:@"minimumTrackTintColor"];
-            [subview setValue:[UIColor colorWithWhite:1.0 alpha:0.2] forKey:@"maximumTrackTintColor"];
-            [subview setValue:[UIColor whiteColor] forKey:@"thumbTintColor"];
-            subview.tintColor = sliderColor;
-        }
-        
         // 递归
-        [self updateSubview:subview 
-                   textColor:textColor 
-             progressColor:progressColor 
-              sliderColor:sliderColor
-               labelClass:labelClass
-          progressViewClass:progressViewClass
-              sliderClass:sliderClass];
+        [self updateSubview:subview textColor:textColor tintColor:tintColor labelClass:labelClass];
     }
 }
 
