@@ -6,6 +6,7 @@
 	<string>音乐播放器发光效果</string>
 	<key>items</key>
 	<array>
+		<!-- 总开关 -->
 		<dict>
 			<key>label</key>
 			<string>总开关</string>
@@ -27,6 +28,7 @@
 			<string>musicfg/prefsChanged</string>
 		</dict>
 		
+		<!-- 播放器外观 -->
 		<dict>
 			<key>label</key>
 			<string>播放器外观</string>
@@ -87,13 +89,34 @@
 			<key>key</key>
 			<string>ShadowRadius</string>
 			<key>max</key>
-			<integer>40</integer>
+			<integer>50</integer>
 			<key>default</key>
 			<integer>15</integer>
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<real>0.1</real>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>阴影透明度</string>
+			<key>key</key>
+			<string>ShadowOpacity</string>
+			<key>max</key>
+			<real>1.0</real>
+			<key>default</key>
+			<real>0.8</real>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
 		
+		<!-- 文字效果 -->
 		<dict>
 			<key>label</key>
 			<string>文字效果</string>
@@ -104,7 +127,7 @@
 			<key>showValue</key>
 			<true/>
 			<key>min</key>
-			<real>0.8</real>
+			<real>0.5</real>
 			<key>defaults</key>
 			<string>musicfg</string>
 			<key>cell</key>
@@ -114,7 +137,7 @@
 			<key>key</key>
 			<string>FontScale</string>
 			<key>max</key>
-			<real>2.0</real>
+			<real>2.5</real>
 			<key>default</key>
 			<real>1.15</real>
 			<key>PostNotification</key>
@@ -134,7 +157,22 @@
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>文字加粗</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>key</key>
+			<string>BoldText</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
 		
+		<!-- 彩虹动画 -->
 		<dict>
 			<key>label</key>
 			<string>彩虹动画</string>
@@ -155,13 +193,42 @@
 			<key>key</key>
 			<string>RainbowSpeed</string>
 			<key>max</key>
-			<integer>10</integer>
+			<integer>20</integer>
 			<key>default</key>
 			<integer>3</integer>
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>彩虹边框</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>key</key>
+			<string>RainbowBorder</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>label</key>
+			<string>彩虹阴影</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>key</key>
+			<string>RainbowShadow</string>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
 		
+		<!-- 通知效果 -->
 		<dict>
 			<key>label</key>
 			<string>通知效果</string>
@@ -199,6 +266,26 @@
 			<integer>50</integer>
 			<key>default</key>
 			<integer>20</integer>
+			<key>PostNotification</key>
+			<string>musicfg/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>showValue</key>
+			<true/>
+			<key>min</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>musicfg</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>label</key>
+			<string>通知边框宽度</string>
+			<key>key</key>
+			<string>NotificationBorderWidth</string>
+			<key>max</key>
+			<integer>10</integer>
+			<key>default</key>
+			<integer>2</integer>
 			<key>PostNotification</key>
 			<string>musicfg/prefsChanged</string>
 		</dict>
